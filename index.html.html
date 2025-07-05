@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerPoint キーメッセージ生成アドオン</title>
+    
+    <!-- Office.js ライブラリ -->
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            padding: 15px;
+            font-size: 14px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section h3 {
+            color: #1e3c72;
+            margin-bottom: 12px;
+            font-size: 16px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px;
+        }
+        
+        .input-group {
+            margin-bottom: 12px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: #333;
+            font-size: 12px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1e3c72;
+            box-shadow: 0 0 5px rgba(30, 60, 114, 0.3);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin: 8px 0;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 11px;
+            width: auto;
+            display: inline-block;
+            margin: 2px;
+        }
+        
+        .message-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #1e3c72;
+        }
+        
+        .message-type {
+            background: #1e3c72;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        
+        .message-text {
+            font-size: 13px;
+            font-weight: bold;
+            color: #2c3e50;
+            line-height: 1.3;
+            margin-bottom: 5px;
+        }
+        
+        .message-description {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .current-slide-info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        
+        .status-bar {
+            background: #28a745;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 11px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .status-bar.error {
+            background: #dc3545;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .slide-preview {
+            background: white;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+            min-height: 80px;
+            margin: 10px 0;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .templates-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        
+        .template-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+            transition: all 0.2s ease;
+        }
+        
+        .template-item:hover {
+            background: #e9ecef;
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 キーメッセージ生成</h1>
+        <p>PowerPoint統合版 - プロフェッショナルメッセージ自動作成</p>
+    </div>
+    
+    <div class="current-slide-info" id="currentSlideInfo">
+        <strong>📄 現在のスライド:</strong> <span id="slideNumber">1</span> / <span id="totalSlides">1</span><br>
+        <strong>📝 タイトル:</strong> <span id="slideTitle">読み込み中...</span>
+    </div>
+    
+    <div class="status-bar" id="statusBar"></div>
+    
+    <!-- クイックアクション -->
+    <div class="section">
+        <h3>⚡ クイックアクション</h3>
+        <div class="quick-actions">
+            <button class="btn btn-success btn-small" onclick="analyzeCurrentSlide()">📊 現在のスライドを分析</button>
+            <button class="btn btn-secondary btn-small" onclick="analyzeAllSlides()">📋 全スライドを分析</button>
+            <button class="btn btn-warning btn-small" onclick="insertMessageToSlide()">➕ メッセージを挿入</button>
+            <button class="btn btn-small" onclick="createNewSlideWithMessage()">📄 新スライド作成</button>
+        </div>
+    </div>
+    
+    <!-- 現在のスライド情報表示 -->
+    <div class="section" id="slideAnalysisSection" style="display: none;">
+        <h3>🔍 スライド分析結果</h3>
+        <div id="slideAnalysisResult"></div>
+    </div>
+    
+    <!-- メッセージ生成 -->
+    <div class="section">
+        <h3>💡 メッセージ生成設定</h3>
+        
+        <div class="input-group">
+            <label>メッセージタイプ:</label>
+            <select id="messageType">
+                <option value="executive">エグゼクティブサマリー</option>
+                <option value="problem">課題・問題提起</option>
+                <option value="solution">ソリューション提案</option>
+                <option value="benefit">ベネフィット・効果</option>
+                <option value="action">アクションプラン</option>
+                <option value="closing">クロージング</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label>対象者:</label>
+            <select id="targetAudience">
+                <option value="executives">経営陣</option>
+                <option value="managers">管理職</option>
+                <option value="team">チームメンバー</option>
+                <option value="clients">クライアント</option>
+                <option value="stakeholders">ステークホルダー</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label>キーワード:</label>
+            <input type="text" id="keywords" placeholder="カンマ区切りで入力">
+        </div>
+        
+        <button class="btn" onclick="generateMessage()">🚀 メッセージ生成</button>
+    </div>
+    
+    <!-- 生成されたメッセージ -->
+    <div class="section" id="generatedMessageSection" style="display: none;">
+        <h3>✨ 生成されたメッセージ</h3>
+        <div id="generatedMessages"></div>
+    </div>
+    
+    <!-- テンプレート選択 -->
+    <div class="section">
+        <h3>📋 クイックテンプレート</h3>
+        <div class="templates-grid">
+            <div class="template-item" onclick="applyTemplate('strategy')">
+                🎯<br>戦略提案
+            </div>
+            <div class="template-item" onclick="applyTemplate('analysis')">
+                📊<br>分析結果
+            </div>
+            <div class="template-item" onclick="applyTemplate('proposal')">
+                💼<br>企画提案
+            </div>
+            <div class="template-item" onclick="applyTemplate('conclusion')">
+                ✅<br>結論・まとめ
+            </div>
+        </div>
+    </div>
+    
+    <!-- PowerPoint操作 -->
+    <div class="section">
+        <h3>🔧 PowerPoint操作</h3>
+        <button class="btn btn-secondary" onclick="getCurrentSlideInfo()">📄 スライド情報を更新</button>
+        <button class="btn btn-secondary" onclick="exportMessages()">💾 メッセージをエクスポート</button>
+    </div>
+
+    <script>
+        let currentSlideData = {};
+        let generatedMessagesData = [];
+        
+        // Office.js 初期化
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.PowerPoint) {
+                console.log('PowerPoint アドオンが初期化されました');
+                showStatus('PowerPointアドオンが正常に読み込まれました', 'success');
+                getCurrentSlideInfo();
+            } else {
+                showStatus('このアドオンはPowerPointでのみ動作します', 'error');
+            }
+        });
+        
+        // ステータス表示
+        function showStatus(message, type = 'success') {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.textContent = message;
+            statusBar.className = `status-bar ${type === 'error' ? 'error' : ''}`;
+            statusBar.style.display = 'block';
+            
+            setTimeout(() => {
+                statusBar.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 現在のスライド情報を取得
+        async function getCurrentSlideInfo() {
+            try {
+                await PowerPoint.run(async (context) => {
+                    const presentation = context.presentation;
+                    const slides = presentation.slides;
+                    const currentSlide = presentation.getSelectedSlides().getItemAt(0);
+                    
+                    slides.load('items/id');
+                    currentSlide.load('id,shapes');
+                    
+                    await context.sync();
+                    
+                    const slideIndex = slides.items.findIndex(slide => slide.id === currentSlide.id) + 1;
+                    const totalSlides = slides.items.length;
+                    
+                    // スライドタイトルを取得
+                    let slideTitle = 'タイトルなし';
+                    const shapes = currentSlide.shapes;
+                    shapes.load('items/name,items/textFrame');
+                    await context.sync();
+                    
+                    for (let shape of shapes.items) {
+                        if (shape.name.includes('Title') || shape.textFrame.hasText) {
+                            shape.textFrame.load('textRange');
+                            await context.sync();
+                            slideTitle = shape.textFrame.textRange.text.substring(0, 50) || 'タイトルなし';
+                            break;
+                        }
+                    }
+                    
+                    // UI更新
+                    document.getElementById('slideNumber').textContent = slideIndex;
+                    document.getElementById('totalSlides').textContent = totalSlides;
+                    document.getElementById('slideTitle').textContent = slideTitle;
+                    
+                    currentSlideData = {
+                        index: slideIndex,
+                        total: totalSlides,
+                        title: slideTitle,
+                        id: currentSlide.id
+                    };
+                });
+            } catch (error) {
+                console.error('スライド情報取得エラー:', error);
+                showStatus('スライド情報の取得に失敗しました', 'error');
+            }
+        }
+        
+        // 現在のスライドを分析
+        async function analyzeCurrentSlide() {
+            try {
+                showStatus('スライドを分析中...', 'info');
+                
+                await PowerPoint.run(async (context) => {
+                    const currentSlide = context.presentation.getSelectedSlides().getItemAt(0);
+                    const shapes = currentSlide.shapes;
+                    
+                    shapes.load('items/name,items/textFrame,items/type');
+                    await context.sync();
+                    
+                    let slideContent = {
+                        title: '',
+                        textContent: [],
+                        shapeCount: shapes.items.length
+                    };
+                    
+                    for (let shape of shapes.items) {
+                        if (shape.textFrame && shape.textFrame.hasText) {
+                            shape.textFrame.load('textRange');
+                            await context.sync();
+                            
+                            const text = shape.textFrame.textRange.text;
+                            if (shape.name.includes('Title')) {
+                                slideContent.title = text;
+                            } else {
+                                slideContent.textContent.push(text);
+                            }
+                        }
+                    }
+                    
+                    displaySlideAnalysis(slideContent);
+                });
+                
+                showStatus('スライド分析が完了しました', 'success');
+            } catch (error) {
+                console.error('スライド分析エラー:', error);
+                showStatus('スライド分析に失敗しました', 'error');
+            }
+        }
+        
+        // スライド分析結果を表示
+        function displaySlideAnalysis(content) {
+            const section = document.getElementById('slideAnalysisSection');
+            const result = document.getElementById('slideAnalysisResult');
+            
+            result.innerHTML = `
+                <div class="slide-preview">
+                    <strong>📝 タイトル:</strong> ${content.title || 'なし'}<br>
+                    <strong>📄 テキスト要素:</strong> ${content.textContent.length}個<br>
+                    <strong>🔧 図形要素:</strong> ${content.shapeCount}個<br>
+                    <hr style="margin: 10px 0;">
+                    <strong>📋 主要コンテンツ:</strong><br>
+                    ${content.textContent.slice(0, 3).map(text => `• ${text.substring(0, 50)}...`).join('<br>')}
+                </div>
+                <button class="btn btn-small" onclick="generateMessageFromCurrentSlide()">
+                    🎯 このスライドからメッセージ生成
+                </button>
+            `;
+            
+            section.style.display = 'block';
+        }
+        
+        // 全スライドを分析
+        async function analyzeAllSlides() {
+            try {
+                showStatus('全スライドを分析中...', 'info');
+                
+                await PowerPoint.run(async (context) => {
+                    const presentation = context.presentation;
+                    const slides = presentation.slides;
+                    
+                    slides.load('items');
+                    await context.sync();
+                    
+                    let allContent = [];
+                    
+                    for (let i = 0; i < Math.min(slides.items.length, 10); i++) {
+                        const slide = slides.items[i];
+                        const shapes = slide.shapes;
+                        
+                        shapes.load('items/textFrame');
+                        await context.sync();
+                        
+                        let slideTexts = [];
+                        for (let shape of shapes.items) {
+                            if (shape.textFrame && shape.textFrame.hasText) {
+                                shape.textFrame.load('textRange');
+                                await context.sync();
+                                slideTexts.push(shape.textFrame.textRange.text);
+                            }
+                        }
+                        
+                        allContent.push({
+                            slideNumber: i + 1,
+                            texts: slideTexts
+                        });
+                    }
+                    
+                    displayAllSlidesAnalysis(allContent);
+                });
+                
+                showStatus('全スライド分析が完了しました', 'success');
+            } catch (error) {
+                console.error('全スライド分析エラー:', error);
+                showStatus('全スライド分析に失敗しました', 'error');
+            }
+        }
+        
+        // 全スライド分析結果を表示
+        function displayAllSlidesAnalysis(allContent) {
+            const section = document.getElementById('slideAnalysisSection');
+            const result = document.getElementById('slideAnalysisResult');
+            
+            result.innerHTML = `
+                <div class="slide-preview">
+                    <strong>📊 プレゼンテーション全体分析</strong><br>
+                    <strong>スライド数:</strong> ${allContent.length}<br>
+                    <strong>総テキスト要素:</strong> ${allContent.reduce((sum, slide) => sum + slide.texts.length, 0)}個<br>
+                    <hr style="margin: 10px 0;">
+                    ${allContent.slice(0, 5).map(slide => 
+                        `<div style="margin: 5px 0; padding: 5px; background: #f8f9fa; border-radius: 3px;">
+                            <strong>スライド${slide.slideNumber}:</strong> ${slide.texts[0]?.substring(0, 40) || 'テキストなし'}...
+                        </div>`
+                    ).join('')}
+                </div>
+                <button class="btn btn-small" onclick="generateMessageFromAllSlides()">
+                    🎯 全体からメッセージ生成
+                </button>
+            `;
+            
+            section.style.display = 'block';
+        }
+        
+        // メッセージ生成
+        function generateMessage() {
+            const messageType = document.getElementById('messageType').value;
+            const audience = document.getElementById('targetAudience').value;
+            const keywords = document.getElementById('keywords').value;
+            
+            showStatus('メッセージを生成中...', 'info');
+            
+            setTimeout(() => {
+                const messages = createMessages(messageType, audience, keywords);
+                displayGeneratedMessages(messages);
+                showStatus('メッセージ生成が完了しました', 'success');
+            }, 1500);
+        }
+        
+        // メッセージ作成
+        function createMessages(type, audience, keywords) {
+            const keywordList = keywords.split(',').map(k => k.trim()).filter(k => k);
+            const slideTitle = currentSlideData.title || 'このプレゼンテーション';
+            
+            const audienceMap = {
+                executives: '経営陣の皆様',
+                managers: '管理職の皆様',
+                team: 'チームの皆様',
+                clients: 'クライアントの皆様',
+                stakeholders: 'ステークホルダーの皆様'
+            };
+            
+            const targetAudience = audienceMap[audience] || '皆様';
+            
+            const messageTemplates = {
+                executive: [
+                    `${targetAudience}にとって、${slideTitle}は戦略的価値創出の重要な要素となります`,
+                    `${keywordList[0] || '本施策'}により、組織全体のパフォーマンス向上を実現いたします`,
+                    `投資対効果の観点から、${slideTitle}は最優先で実行すべき取り組みです`
+                ],
+                problem: [
+                    `現在直面している${keywordList[0] || '課題'}は、組織の競争力に直接影響を与えています`,
+                    `${slideTitle}で示された問題は、早急な対応が必要な重要事項です`,
+                    `市場環境の変化により、${keywordList[0] || 'この課題'}への対策が不可欠となっています`
+                ],
+                solution: [
+                    `${slideTitle}により、${keywordList.join('、') || '現在の課題'}を根本的に解決できます`,
+                    `提案するソリューションは、${targetAudience}の期待を上回る成果をもたらします`,
+                    `実績に基づいたアプローチにより、確実な問題解決を実現いたします`
+                ],
+                benefit: [
+                    `${slideTitle}の実施により、${keywordList[0] || '大幅な改善'}が期待できます`,
+                    `${targetAudience}にとって、具体的なメリットとして${keywordList.join('、')}が実現されます`,
+                    `投資回収期間は短期間で、長期的な競争優位性も確保できます`
+                ],
+                action: [
+                    `${slideTitle}の実現に向けて、即座にアクションを開始することを提案いたします`,
+                    `成功確実な実行計画により、${keywordList[0] || '目標'}を確実に達成いたします`,
+                    `段階的なアプローチで、リスクを最小化しながら成果を最大化します`
+                ],
+                closing: [
+                    `${targetAudience}のご支援により、${slideTitle}を成功に導くことができます`,
+                    `本日のご提案が、組織の更なる発展の起点となることを確信しております`,
+                    `${slideTitle}の承認をいただき、共に成功への道筋を描かせてください`
+                ]
+            };
+            
+            return (messageTemplates[type] || messageTemplates.executive).map((text, index) => ({
+                type: type,
+                text: text,
+                index: index
+            }));
+        }
+        
+        // 生成されたメッセージを表示
+        function displayGeneratedMessages(messages) {
+            const section = document.getElementById('generatedMessageSection');
+            const container = document.getElementById('generatedMessages');
+            
+            generatedMessagesData = messages;
+            
+            container.innerHTML = messages.map((msg, index) => `
+                <div class="message-card">
+                    <div class="message-type">メッセージ ${index + 1}</div>
+                    <div class="message-text">${msg.text}</div>
+                    <div style="margin-top: 8px;">
+                        <button class="btn btn-small btn-success" onclick="insertMessageToSlide('${msg.text.replace(/'/g, '\\\')}')">
+                            ➕ スライドに挿入
+                        </button>
+                        <button class="btn btn-small" onclick="copyToClipboard('${msg.text.replace(/'/g, '\\\')}')">
+                            📋 コピー
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            section.style.display = 'block';
+        }
+        
+        // メッセージをスライドに挿入
+        async function insertMessageToSlide(message) {
+            if (!message && generatedMessagesData.length > 0) {
+                message = generatedMessagesData[0].text;
+            }
+            
+            try {
+                await PowerPoint.run(async (context) => {
+                    const currentSlide = context.presentation.getSelectedSlides().getItemAt(0);
+                    
+                    // テキストボックスを追加
+                    const textBox = currentSlide.shapes.addTextBox(message, {
+                        left: 50,
+                        top: 300,
+                        width: 600,
+                        height: 100
+                    });
+                    
+                    // フォーマット設定
+                    textBox.textFrame.textRange.font.size = 18;
+                    textBox.textFrame.textRange.font.bold = true;
+                    textBox.textFrame.textRange.font.color = '#1e3c72';
+                    
+                    await context.sync();
+                });
+                
+                showStatus('メッセージをスライドに挿入しました', 'success');
+            } catch (error) {
+                console.error('メッセージ挿入エラー:', error);
+                showStatus('メッセージの挿入に失敗しました', 'error');
+            }
+        }
+        
+        // 新しいスライドを作成してメッセージを挿入
+        async function createNewSlideWithMessage() {
+            if (generatedMessagesData.length === 0) {
+                showStatus('まずメッセージを生成してください', 'error');
+                return;
+            }
+            
+            try {
+                await PowerPoint.run(async (context) => {
+                    const presentation = context.presentation;
+                    
+                    // 新しいスライドを追加
+                    const newSlide = presentation.slides.add(PowerPoint.SlideLayoutType.titleAndContent);
+                    
+                    // タイトルを設定
+                    newSlide.shapes.getItemAt(0).textFrame.textRange.text = 'キーメッセージ';
+                    
+                    // メッセージを追加
+                    const message = generatedMessagesData[0].text;
+                    newSlide.shapes.getItemAt(1).textFrame.textRange.text = message;
+                    
+                    // 新しいスライドを選択
+                    newSlide.select();
+                    
+                    await context.sync();
+                });
+                
+                showStatus('新しいスライドを作成しました', 'success');
+                getCurrentSlideInfo(); // スライド情報を更新
+            } catch (error) {
+                console.error('新スライド作成エラー:', error);
+                showStatus('新しいスライドの作成に失敗しました', 'error');
+            }
+        }
+        
+        // テンプレート適用
+        function applyTemplate(templateType) {
+            const templates = {
+                strategy: {
+                    messageType: 'executive',
+                    audience: 'executives',
+                    keywords: '戦略,競争優位,成長,変革'
+                },
+                analysis: {
+                    messageType: 'problem',
+                    audience: 'managers',
+                    keywords: '分析,課題,改善,最適化'
+                },
+                proposal: {
+                    messageType: 'solution',
+                    audience: 'stakeholders',
+                    keywords: '提案,ソリューション,実装,効果'
+                },
+                conclusion: {
+                    messageType: 'closing',
+                    audience: 'executives',
+                    keywords: 'まとめ,決定,実行,成功'
+                }
+            };
+            
+            const template = templates[templateType];
+            if (template) {
+                document.getElementById('messageType').value = template.messageType;
+                document.getElementById('targetAudience').value = template.audience;
+                document.getElementById('keywords').value = template.keywords;
+                
+                showStatus(`${templateType}テンプレートを適用しました`, 'success');
+            }
+        }
+        
+        // クリップボードにコピー
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showStatus('クリップボードにコピーしました', 'success');
+            } catch (error) {
+                console.error('コピーエラー:', error);
+                showStatus('コピーに失敗しました', 'error');
+            }
+        }
+        
+        // 現在のスライドからメッセージ生成
+        function generateMessageFromCurrentSlide() {
+            document.getElementById('keywords').value = currentSlideData.title || 'プレゼンテーション';
+            generateMessage();
+        }
+        
+        // 全スライドからメッセージ生成
+        function generateMessageFromAllSlides() {
+            document.getElementById('keywords').value = 'プレゼンテーション全体,統合メッセージ,総合提案';
+            generateMessage();
+        }
+        
+        // メッセージエクスポート
+        function exportMessages() {
+            if (generatedMessagesData.length === 0) {
+                showStatus('エクスポートするメッセージがありません', 'error');
+                return;
+            }
+            
+            const exportText = generatedMessagesData.map((msg, index) => 
+                `メッセージ ${index + 1}: ${msg.text}`
+            ).join('\n\n');
+            
+            const blob = new Blob([exportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'powerpoint_key_messages.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showStatus('メッセージをエクスポートしました', 'success');
+        }
+        
+        // ページ読み込み時の初期化
+        window.addEventListener('load', () => {
+            // 定期的にスライド情報を更新
+            setInterval(getCurrentSlideInfo, 10000); // 10秒ごと
+        });
+    </script>
+</body>
+</html>
